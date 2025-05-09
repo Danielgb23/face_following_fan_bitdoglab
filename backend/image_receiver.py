@@ -23,13 +23,13 @@ def receive_frame():
             part, _ = sock_recv.recvfrom(2048)
             buffer.extend(part)
         except socket.timeout:
-            break
+            return None
     # Decode JPEG image
     img_array = np.frombuffer(buffer, dtype=np.uint8)
 
     # incomplete image
     if len(img_array) != img_size:
-        print("corrupted data")
+        #print("corrupted data")
         return None
 
     frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
@@ -39,8 +39,8 @@ while True:
     frame = receive_frame()
     if frame is not None:
         cv2.imshow("ESP32-CAM Stream", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
 sock_recv.close()
 cv2.destroyAllWindows()
