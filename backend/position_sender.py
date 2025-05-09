@@ -1,12 +1,34 @@
 import cv2
 import socket
 import struct
-from time import sleep
-# IP and port of the BitDogLab plate (replace with actual IP)
-UDP_IP = '192.168.18.16'
-PORT = 12345
 
-# Setup socket connection
+
+def send_udp_broadcast(message ):
+    # send a broadcast with the message
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)  # UDP
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.sendto(message, ("255.255.255.255", 12347))
+    sock.settimeout(3)  # Optional: avoid blocking forever
+    
+    #send ACK and return value or return none
+    try:
+        response, _ = sock.recvfrom(1024)
+        sock.close()
+        return response.decode()
+    except TimeoutError:
+        sock.close()
+        return None
+
+# Wait until ipaddress is registered on mock dns server
+resp=None
+while( resp is None):
+    resp=send_udp_broadcast(b"REGISTER backend")
+
+# port of the BitDogLab plate 
+PORT_XY = 12345
+bitdog_ip=None
+
+# Setup socket connection UDP
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # Load OpenCV face detector
@@ -23,7 +45,20 @@ face_cascade = cv2.CascadeClassifier(cascade_path)
 
 cam = cv2.VideoCapture(0)
 
+
 while True:
+    # gets ip of bitdoglab board
+    #try:
+    #    bitdog_ip = socket.gethostbyname("bitdog.local")
+    #except socket.gaierror as e:
+    #print("Bitdoglab board not found")
+
+    # Wait until bitdog ip address is received
+    bitdog_ip=None
+    while( bitdog_ip is None):
+        bitdog_ip=send_udp_broadcast(b"RESOLVE bitdog")
+    print(bitdog_ip)
+
     ret, frame = cam.read()
     if not ret:
         continue
@@ -45,9 +80,9 @@ while True:
         # Show detection
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    # Send dx, dy as 2-byte values through UDP
-    data = struct.pack('bb', dx, dy)
-    sock.sendto(data, (UDP_IP, PORT))  
+        # Send dx, dy as 2-byte values through UDP
+        data = struct.pack('bb', dx, dy)
+        sock.sendto(data, (bitdog_ip, PORT_XY))  
 
     cv2.imshow("Face Tracking", frame)
     if cv2.waitKey(1) == 27:  # ESC key

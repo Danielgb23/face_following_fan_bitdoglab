@@ -67,7 +67,7 @@ Used pinout:
 16: VCC1 logic gates power source (5V)
 8: Vcc2 fan power supply input
 9: EN modules 4 and 3 (if L makes output high impedance)
-15: A module 4 (control pulse)
+15: A module 4 (control pulse from GPIO4)
 14: output module 4 to connect on device
 """
 from machine import Pin, PWM
@@ -82,21 +82,58 @@ def update_fan(percent):
     duty = int((percent / 100) * 65535)
     fan_pwm.duty_u16(duty)
 
+"""
+Main file
 
+It polls waiting for udp packets at port 12345
+and updates the servos with the new position
+if no packages are received a timer turns off
+the fan.
+"""
 import socket
 import network
 import struct
 
+from machine import Timer
+
 import utime
+
+def send_udp_broadcast(message):
+    # send a broadcast with the message
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.sendto(message, ("255.255.255.255", 12347))
+    sock.settimeout(3)  # Optional: avoid blocking forever
+    
+    #send ACK and return value or return none
+    try:
+        response, _ = sock.recvfrom(1024)
+        sock.close()
+        return response.decode()
+    except TimeoutError:
+        sock.close()
+        return None
 
 
 #from servos import servo_update
 #from hbridge import update_fan
 
+# timer that turns off the pwm of the fan each 15s
+fan_timer=Timer()
+def fan_timeout(timer):
+    update_fan(0)
+    print("fan timeout")
+    # period=[ms]
+    fan_timer.init(mode=Timer.ONE_SHOT, period=15000, callback=fan_timeout)
 
 # Setup Wi-Fi
 ssid = 'DLEA801'
 password = 'fanrobot'
+
+
+network.hostname("bitdog")
+
+
 
 sta = network.WLAN(network.STA_IF)
 sta.active(True)
@@ -107,35 +144,38 @@ while not sta.isconnected():
 
 print('Connected to Wi-Fi:', sta.ifconfig())
 
-
+# Wait until ipaddress is registered on mock dns server
+resp=None
+while( resp is None):
+    resp=send_udp_broadcast(b"REGISTER bitdog")
 
 # Create TCP socket server
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('0.0.0.0', 12345))
 
-fan_timeout=200 #20 s
+
+
+
+fan_timeout(0)
 try:
     while True:
-        # receives two two byte elements from the tcp connection
+        # receives two 1 byte elements from the udp connection
         data, addr = sock.recvfrom(2)
-
+        
+        # if data is received turns on the fan each 100ms cycle
+        # if it's waiting at the previous code line, the timer fan_timeout
+        # will make sure the fan is off after a wait period
+        update_fan(100)
+        
         # bb = signed 2 byte int
         dx, dy = struct.unpack('bb', data)
         print(f"dx={dx}, dy={dy}")
-        
-        # 127 means there is no face data
-        if dx == 127:
-            if fan_timeout <=0:
-                update_fan(0)
-            else:
-                fan_timeout-=1
-        # there's face data
-        else:
-            update_fan(100)
-            servo_update(dx,dy)
-            fan_timeout=200
+
+        # update servos position
+        servo_update(dx,dy)
         
         utime.sleep(0.1)
+        
 # when the program is interrupted turns off all pwm signals
 except KeyboardInterrupt:
     print("User interrupt")

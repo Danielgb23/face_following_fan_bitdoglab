@@ -1,4 +1,3 @@
-"""
 https://randomnerdtutorials.com/program-upload-code-esp32-cam/
+AI thinker ESP32-CAM
 
-"""
