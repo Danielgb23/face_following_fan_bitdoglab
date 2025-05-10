@@ -19,26 +19,33 @@ volatile bool requestFlag = true;
 
 WiFiUDP udp;
 WiFiUDP udp_dns;
-String udpAddress;
 
-//mock dns server resolve function
+String udpAddress;
+String udpAddressAux;
+
+
+// mock dns server resolve function with timeout
 String resolve_name(const char* name) {
+  const unsigned long timeout_ms = 150;
   String message = "RESOLVE " + String(name);
 
   udp_dns.beginPacket("255.255.255.255", 12347);
   udp_dns.print(message);
   udp_dns.endPacket();
 
-  //delay(10);  // Wait for server to respond
+  //delay(20);
 
-  int packetSize = udp_dns.parsePacket();
-  if (packetSize) {
-    char reply[64];
-    int len = udp_dns.read(reply, sizeof(reply) - 1);
-    reply[len] = '\0';
-    return String(reply);
-  } else {
-    return "\0";
+  unsigned long start = millis();
+  while (millis() - start < timeout_ms) {
+    int packetSize = udp_dns.parsePacket();
+    if (packetSize) {
+      char reply[64];
+      
+      int len = udp_dns.read(reply, sizeof(reply) - 1);
+      reply[len] = '\0';
+      return String(reply);
+    }
+    //delay(20);  // short delay to avoid busy loop
   }
 }
 
@@ -120,16 +127,22 @@ void setup() {
   
   esp_timer_create(&timer_args, &timer);
   esp_timer_start_periodic(timer, 10 * 1000000);  // 10s in microseconds
+  
+  
+  //first dns request
+  udpAddress[0]='\0';
+  while(udpAddress[0]=='\0' || udpAddress=="NOT_FOUND")
+      udpAddress = resolve_name(backend_name);
+    
 }
 
 void loop() {
   if (requestFlag) {
     requestFlag = false;
-    udpAddress="\0";
     //request backend address
-    while(udpAddress[0]=='\0'){
-      udpAddress = resolve_name(backend_name);
-    }
+    udpAddressAux = resolve_name(backend_name);
+    if(udpAddressAux[0]!='\0' && udpAddressAux!="NOT_FOUND")
+      udpAddress=udpAddressAux;
   }
 
   camera_fb_t *fb = esp_camera_fb_get();
@@ -157,4 +170,8 @@ void loop() {
 
   esp_camera_fb_return(fb);
   delay(50);  // capture every []ms
+
+  udp_dns.beginPacket("255.255.255.255", 12347);
+  udp_dns.print("test");
+  udp_dns.endPacket();
 }
