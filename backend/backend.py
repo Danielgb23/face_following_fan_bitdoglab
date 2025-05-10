@@ -10,7 +10,7 @@ UDP_IP = "0.0.0.0"
 UDP_PORT = 12346
 sock_recv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock_recv.bind((UDP_IP, UDP_PORT))
-sock_recv.settimeout(0.03)  # Optional: avoid blocking forever
+sock_recv.settimeout(0.06)  # Optional: avoid blocking forever
 
 # Receives a frame from the esp32-cam module
 def receive_frame():
@@ -51,7 +51,7 @@ def send_udp_broadcast(message ):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)  # UDP
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.sendto(message, ("255.255.255.255", 12347))
-    sock.settimeout(3)  # Optional: avoid blocking forever
+    sock.settimeout(1)  # Optional: avoid blocking forever
     
     #send ACK and return value or return none
     try:
@@ -92,7 +92,7 @@ def get_bitdog_ip():
 
     while( bitdog_ip is None):
         bitdog_ip=send_udp_broadcast(b"RESOLVE bitdog")
-    print(bitdog_ip)
+    print("bitdog ip", bitdog_ip)
     if bitdog_ip == "NOT_FOUND":
         bitdog_ip=None
 
@@ -110,7 +110,11 @@ while True:
         if frame is not None:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             gray = cv2.equalizeHist(gray)  # Enhance contrast
-            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.05, minNeighbors=5, minSize=(30, 30))
+            faces = face_cascade.detectMultiScale(
+                gray, scaleFactor=1.05,
+                minNeighbors=6,
+                minSize=(40, 40)
+            )
             # faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
             dx, dy = 127, 127  # Default if no face

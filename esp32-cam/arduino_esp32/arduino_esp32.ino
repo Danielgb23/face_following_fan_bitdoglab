@@ -29,7 +29,7 @@ String resolve_name(const char* name) {
   udp_dns.print(message);
   udp_dns.endPacket();
 
-  delay(20);  // Wait for server to respond
+  //delay(10);  // Wait for server to respond
 
   int packetSize = udp_dns.parsePacket();
   if (packetSize) {
@@ -156,5 +156,5 @@ void loop() {
   }
 
   esp_camera_fb_return(fb);
-  delay(100);  // capture every []ms
+  delay(50);  // capture every []ms
 }
