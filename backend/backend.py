@@ -1,0 +1,143 @@
+import cv2
+import socket
+import struct
+import numpy as np
+import threading
+
+
+# ESP32-CAM UDP config
+UDP_IP = "0.0.0.0"
+UDP_PORT = 12346
+sock_recv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock_recv.bind((UDP_IP, UDP_PORT))
+sock_recv.settimeout(0.03)  # Optional: avoid blocking forever
+
+# Receives a frame from the esp32-cam module
+def receive_frame():
+    # First, get the image size (sent as 4 bytes, little endian)
+    try:
+        size_data, _ = sock_recv.recvfrom(4)
+    except socket.timeout:
+            return None
+    if len(size_data) != 4:
+        return None
+    img_size = int.from_bytes(size_data, 'little')
+
+
+    # Receive the full image data
+    buffer = bytearray()
+    while len(buffer) < img_size:
+        try:
+            part, _ = sock_recv.recvfrom(2048)
+            buffer.extend(part)
+        except socket.timeout:
+            return None
+
+    # Decode JPEG image
+    img_array = np.frombuffer(buffer, dtype=np.uint8)
+
+    # incomplete image
+    if len(img_array) != img_size:
+        #print("corrupted data")
+        return None
+
+    frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+    return frame
+
+
+# udp broadcast for the mock dns server
+def send_udp_broadcast(message ):
+    # send a broadcast with the message
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)  # UDP
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.sendto(message, ("255.255.255.255", 12347))
+    sock.settimeout(3)  # Optional: avoid blocking forever
+    
+    #send ACK and return value or return none
+    try:
+        response, _ = sock.recvfrom(1024)
+        sock.close()
+        return response.decode()
+    except TimeoutError:
+        sock.close()
+        return None
+
+# Wait until ipaddress is registered on mock dns server
+resp=None
+while( resp is None):
+    resp=send_udp_broadcast(b"REGISTER backend")
+
+
+
+# Load OpenCV face detector
+
+# Open CV Pretrained model for faces
+# Arch linux #####
+cascade_path = "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml"
+face_cascade = cv2.CascadeClassifier(cascade_path)
+#######
+# Windows #####
+#face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+############
+
+
+#cam = cv2.VideoCapture(0)
+
+stop=False
+def get_bitdog_ip(timer):
+    bitdog_ip=None
+    while( bitdog_ip is None):
+        bitdog_ip=send_udp_broadcast(b"RESOLVE bitdog")
+    print(bitdog_ip)
+
+    if not stop:
+        # Timer to periodically update bitdog ip address
+        timer.start()
+
+timer=threading.Timer( 10,get_bitdog_ip )
+# Wait until bitdog ip address is received
+get_bitdog_ip(timer)
+
+while True:
+
+
+    #frame=None
+    #while frame is None:
+    frame = receive_frame()
+    if frame is not None:
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        dx, dy = 127, 127  # Default if no face
+    
+        if len(faces) > 0:
+            
+    
+            # Pick the largest face
+            x, y, w, h = max(faces, key=lambda f: f[2]*f[3])
+            center_x = x + w // 2
+            center_y = y + h // 2
+    
+            # Normalize positions to 0-100 (example range)
+            dx = int(-( ( center_x / frame.shape[1]) * 100-50))
+            dy = int( ( center_y  / frame.shape[0]) * 100-50)
+            # Show detection
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    
+            # Send dx, dy as 2-byte values through UDP
+            data = struct.pack('bb', dx, dy)
+            # Setup socket connection UDP to send xy to bitdog
+
+            # port of the BitDogLab plate 
+            PORT_XY = 12345
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.sendto(data, (bitdog_ip, PORT_XY))  
+            sock.close()
+
+        cv2.imshow("Face Tracking", frame)
+    if cv2.waitKey(1) == 27:  # ESC key
+        stop=True # interrupt timer cycle
+        timer.cancel() # cancel timer
+        break
+
+sock_recv.close()
+cv2.destroyAllWindows()
