@@ -1,15 +1,21 @@
+//esp32 by Espressif Systems version 3.2.0
+
 #include "esp_camera.h"
 #include <WiFi.h>
 #include <WiFiUdp.h>
+
 
 // WiFi config
 const char* ssid = "DLEA801";
 const char* password = "fanrobot";
 
-// UDP config
-
+// mock DNS UDP config
 const int picPort = 12346;
 const char* backend_name="backend";
+
+//timer interrupt
+esp_timer_handle_t timer;
+volatile bool requestFlag = true;
 
 WiFiUDP udp;
 WiFiUDP udp_dns;
@@ -61,8 +67,8 @@ void startCamera() {
   config.pixel_format = PIXFORMAT_JPEG;
 
   if(psramFound()){
-    config.frame_size = FRAMESIZE_VGA;
-    config.jpeg_quality = 5;
+    config.frame_size = FRAMESIZE_QVGA; //320 × 240
+    config.jpeg_quality = 3;
     config.fb_count = 2;
   } else {
     config.frame_size = FRAMESIZE_QQVGA;
@@ -85,6 +91,11 @@ void startCamera() {
   }
 }
 
+//timer interrupt
+void  onTimer(void * arg) {
+  requestFlag = true;  // Set flag on interrupt
+}
+
 void setup() {
   Serial.begin(115200);
   WiFi.begin(ssid, password);
@@ -97,15 +108,30 @@ void setup() {
   startCamera();
   udp.begin(picPort);
   udp_dns.begin(12347);
+
+   // Create a periodic timer
+  const esp_timer_create_args_t timer_args = {
+      .callback = &onTimer,
+      .arg = nullptr,
+      .dispatch_method = ESP_TIMER_TASK,
+      .name = "periodic_timer"
+  };
+
+  
+  esp_timer_create(&timer_args, &timer);
+  esp_timer_start_periodic(timer, 10 * 1000000);  // 10s in microseconds
 }
 
 void loop() {
-
-  udpAddress="\0";
-  //request backend address
-  while(udpAddress[0]=='\0'){
-    udpAddress = resolve_name(backend_name);
+  if (requestFlag) {
+    requestFlag = false;
+    udpAddress="\0";
+    //request backend address
+    while(udpAddress[0]=='\0'){
+      udpAddress = resolve_name(backend_name);
+    }
   }
+
   camera_fb_t *fb = esp_camera_fb_get();
   if (!fb) {
     Serial.println("Camera capture failed");
@@ -130,5 +156,5 @@ void loop() {
   }
 
   esp_camera_fb_return(fb);
-  delay(100);  // capture every 300 ms
+  delay(100);  // capture every []ms
 }
