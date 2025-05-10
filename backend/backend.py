@@ -4,7 +4,7 @@ import struct
 import numpy as np
 import threading
 
-
+import time
 # ESP32-CAM UDP config
 UDP_IP = "0.0.0.0"
 UDP_PORT = 12346
@@ -81,63 +81,71 @@ face_cascade = cv2.CascadeClassifier(cascade_path)
 ############
 
 
-#cam = cv2.VideoCapture(0)
-
+# bitdog position data socket
+sock_xy = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 stop=False
-def get_bitdog_ip(timer):
+def get_bitdog_ip():
+    global timer
+    global bitdog_ip
+
     bitdog_ip=None
+
     while( bitdog_ip is None):
         bitdog_ip=send_udp_broadcast(b"RESOLVE bitdog")
     print(bitdog_ip)
+    if bitdog_ip == "NOT_FOUND":
+        bitdog_ip=None
 
     if not stop:
         # Timer to periodically update bitdog ip address
+        timer=threading.Timer( 10,get_bitdog_ip )
         timer.start()
 
-timer=threading.Timer( 10,get_bitdog_ip )
 # Wait until bitdog ip address is received
-get_bitdog_ip(timer)
+get_bitdog_ip()
 
 while True:
+    try:
+        frame = receive_frame()
+        if frame is not None:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.equalizeHist(gray)  # Enhance contrast
+            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.05, minNeighbors=5, minSize=(30, 30))
+            # faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
+            dx, dy = 127, 127  # Default if no face
+            if len(faces) > 0:
+                # Pick the largest face
+                x, y, w, h = max(faces, key=lambda f: f[2]*f[3])
+                center_x = x + w // 2
+                center_y = y + h // 2
+        
+                # Normalize positions to 0-100 (example range)
+                dx = int(-( ( center_x / frame.shape[1]) * 100-50))
+                dy = int( ( center_y  / frame.shape[0]) * 100-50)
+                # Show detection
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        
+                # Send dx, dy as 2-byte values through UDP
+                data = struct.pack('bb', dx, dy)
+                # Setup socket connection UDP to send xy to bitdog
 
-    #frame=None
-    #while frame is None:
-    frame = receive_frame()
-    if frame is not None:
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-        dx, dy = 127, 127  # Default if no face
-    
-        if len(faces) > 0:
-            
-    
-            # Pick the largest face
-            x, y, w, h = max(faces, key=lambda f: f[2]*f[3])
-            center_x = x + w // 2
-            center_y = y + h // 2
-    
-            # Normalize positions to 0-100 (example range)
-            dx = int(-( ( center_x / frame.shape[1]) * 100-50))
-            dy = int( ( center_y  / frame.shape[0]) * 100-50)
-            # Show detection
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    
-            # Send dx, dy as 2-byte values through UDP
-            data = struct.pack('bb', dx, dy)
-            # Setup socket connection UDP to send xy to bitdog
+                if bitdog_ip is not None:
+                    try:
+                        # port of the BitDogLab plate 
+                        PORT_XY = 12345
+                        sock_xy.sendto(data, (bitdog_ip, PORT_XY))  
+                    except socket.gaierror:
+                        pass
 
-            # port of the BitDogLab plate 
-            PORT_XY = 12345
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.sendto(data, (bitdog_ip, PORT_XY))  
-            sock.close()
-
-        cv2.imshow("Face Tracking", frame)
-    if cv2.waitKey(1) == 27:  # ESC key
-        stop=True # interrupt timer cycle
-        timer.cancel() # cancel timer
+            cv2.imshow("Face Tracking", frame)
+        if cv2.waitKey(1) == 27:  # ESC key
+            break
+    except KeyboardInterrupt:
         break
 
+stop=True # interrupt timer cycle
+timer.cancel() # cancel timer
 sock_recv.close()
+sock_xy.close()
 cv2.destroyAllWindows()
