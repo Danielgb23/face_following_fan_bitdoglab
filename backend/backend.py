@@ -143,7 +143,7 @@ while True:
                 data = struct.pack('bb', dx, dy)
                 # Setup socket connection UDP to send xy to bitdog
                 if bitdog_ip is not None:
-                    # port of the BitDogLab plate 
+                    #  Sends the face center coordinates to BitDogLab's IP through port 12345
                     sock_xy.sendto(data, (bitdog_ip, 12345))  
 
                 time.sleep(0.15)
