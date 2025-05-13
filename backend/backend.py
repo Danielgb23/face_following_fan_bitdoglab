@@ -75,7 +75,7 @@ while( resp is None):
 # Arch linux #####
 cascade_path = "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml"
 face_cascade = cv2.CascadeClassifier(cascade_path)
-#######
+####### as ex
 # Windows #####
 #face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 ############
@@ -92,7 +92,6 @@ def get_bitdog_ip():
 
     while( bitdog_ip is None):
         bitdog_ip=send_udp_broadcast(b"RESOLVE bitdog")
-    print("bitdog ip", bitdog_ip)
     if bitdog_ip == "NOT_FOUND":
         bitdog_ip=None
 
@@ -100,6 +99,7 @@ def get_bitdog_ip():
         # Timer to periodically update bitdog ip address
         timer=threading.Timer( 10,get_bitdog_ip )
         timer.start()
+    # print("bitdog ip", bitdog_ip)
 
 # Wait until bitdog ip address is received
 get_bitdog_ip()
@@ -129,24 +129,26 @@ while True:
                 dy = int( ( center_y  / frame.shape[0]) * 100-50)
                 # Show detection
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        
+                
+                #print(dx,dy)    
+                
                 # Send dx, dy as 2-byte values through UDP
                 data = struct.pack('bb', dx, dy)
                 # Setup socket connection UDP to send xy to bitdog
-
                 if bitdog_ip is not None:
-                    try:
-                        # port of the BitDogLab plate 
-                        PORT_XY = 12345
-                        sock_xy.sendto(data, (bitdog_ip, PORT_XY))  
-                    except socket.gaierror:
-                        pass
+                    # port of the BitDogLab plate 
+                    sock_xy.sendto(data, (bitdog_ip, 12345))  
+
+                time.sleep(0.15)
 
             cv2.imshow("Face Tracking", frame)
+            # sleep to not overload network
         if cv2.waitKey(1) == 27:  # ESC key
             break
-    except KeyboardInterrupt:
+        
+    except KeyboardInterrupt as ex:
         break
+
 
 stop=True # interrupt timer cycle
 timer.cancel() # cancel timer

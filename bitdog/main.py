@@ -109,8 +109,9 @@ def send_udp_broadcast(message):
     try:
         response, _ = sock.recvfrom(1024)
         sock.close()
+        print("registered IP")
         return response.decode()
-    except TimeoutError:
+    except OSError:
         sock.close()
         return None
 

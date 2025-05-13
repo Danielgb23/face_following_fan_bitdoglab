@@ -26,7 +26,7 @@ String udpAddressAux;
 
 // mock dns server resolve function with timeout
 String resolve_name(const char* name) {
-  const unsigned long timeout_ms = 150;
+  const unsigned long timeout_ms = 15;
   String message = "RESOLVE " + String(name);
 
   udp_dns.beginPacket("255.255.255.255", 12347);
@@ -47,6 +47,8 @@ String resolve_name(const char* name) {
     }
     //delay(20);  // short delay to avoid busy loop
   }
+  return "NOT_FOUND";
+
 }
 
 void startCamera() {
@@ -74,8 +76,8 @@ void startCamera() {
   config.pixel_format = PIXFORMAT_JPEG;
 
   if(psramFound()){
-    config.frame_size = FRAMESIZE_QVGA; //320 × 240
-    config.jpeg_quality = 3;
+    config.frame_size = FRAMESIZE_VGA; //640 × 480
+    config.jpeg_quality = 4;
     config.fb_count = 2;
   } else {
     config.frame_size = FRAMESIZE_QQVGA;
@@ -126,7 +128,7 @@ void setup() {
 
   
   esp_timer_create(&timer_args, &timer);
-  esp_timer_start_periodic(timer, 10 * 1000000);  // 10s in microseconds
+  esp_timer_start_periodic(timer, 15 * 1000000);  // 10s in microseconds
   
   
   //first dns request
@@ -169,9 +171,7 @@ void loop() {
   }
 
   esp_camera_fb_return(fb);
-  delay(50);  // capture every []ms
+  delay(150);  // capture every []ms
 
-  udp_dns.beginPacket("255.255.255.255", 12347);
-  udp_dns.print("test");
-  udp_dns.endPacket();
+
 }

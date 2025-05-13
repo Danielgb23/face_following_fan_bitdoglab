@@ -27,7 +27,7 @@ while True:
         name = text.split(maxsplit=1)[1]
         ip = registry.get(name, "NOT_FOUND")
         sock.sendto(ip.encode(), addr)
-        print("RESOLVE",ip.encode())
+        print("RESOLVE", name , ip)
     
     else:
         sock.sendto(b"ERROR Unknown command", addr)
