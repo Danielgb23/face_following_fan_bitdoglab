@@ -25,16 +25,18 @@ String udpAddressAux;
 
 
 // mock dns server resolve function with timeout
+// This function sends a request to the backend in order to receive the IP address of the notebook
 String resolve_name(const char* name) {
   const unsigned long timeout_ms = 15;
   String message = "RESOLVE " + String(name);
-
+  //make a the request as a broadcast
   udp_dns.beginPacket("255.255.255.255", 12347);
   udp_dns.print(message);
   udp_dns.endPacket();
 
   //delay(20);
 
+  //Receives the IP from the notebook
   unsigned long start = millis();
   while (millis() - start < timeout_ms) {
     int packetSize = udp_dns.parsePacket();
@@ -51,6 +53,7 @@ String resolve_name(const char* name) {
 
 }
 
+//configure the camera
 void startCamera() {
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -75,6 +78,7 @@ void startCamera() {
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
 
+  //Define image parameters
   if(psramFound()){
     config.frame_size = FRAMESIZE_VGA; //640 × 480
     config.jpeg_quality = 4;
@@ -94,6 +98,7 @@ void startCamera() {
   s->set_exposure_ctrl(s, 1);  // Auto exposure
   s->set_awb_gain(s, 1);       // Auto white balance gain
 
+  //Error message
   if (err != ESP_OK) {
     Serial.printf("Camera init failed with error 0x%x", err);
     return;
@@ -139,6 +144,7 @@ void setup() {
 }
 
 void loop() {
+  //Make a DNS requent periodically trough timer interrupt
   if (requestFlag) {
     requestFlag = false;
     //request backend address
@@ -146,7 +152,7 @@ void loop() {
     if(udpAddressAux[0]!='\0' && udpAddressAux!="NOT_FOUND")
       udpAddress=udpAddressAux;
   }
-
+  //Error message if the camera capture fails
   camera_fb_t *fb = esp_camera_fb_get();
   if (!fb) {
     Serial.println("Camera capture failed");
