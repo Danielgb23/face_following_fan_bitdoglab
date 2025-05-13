@@ -6,8 +6,10 @@ import threading
 
 import time
 # ESP32-CAM UDP config
+
+# Create a socket to connect to the ESP32 camera
 UDP_IP = "0.0.0.0"
-UDP_PORT = 12346
+UDP_PORT = 12346 #Selected port specificaly for reciving data packages
 sock_recv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock_recv.bind((UDP_IP, UDP_PORT))
 sock_recv.settimeout(0.06)  # Optional: avoid blocking forever
@@ -36,16 +38,18 @@ def receive_frame():
     # Decode JPEG image
     img_array = np.frombuffer(buffer, dtype=np.uint8)
 
-    # incomplete image
+    # Verify if it is an incomplete image 
     if len(img_array) != img_size:
         #print("corrupted data")
         return None
 
+    #Codify a numpy array as an image
     frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
     return frame
 
 
 # udp broadcast for the mock dns server
+# The backend requests the BitDogLab IP from the DNS 
 def send_udp_broadcast(message ):
     # send a broadcast with the message
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)  # UDP
@@ -82,6 +86,7 @@ face_cascade = cv2.CascadeClassifier(cascade_path)
 
 
 # bitdog position data socket
+# This sends the data containing the face position to BitDogLab's IP adress
 sock_xy = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 stop=False
 def get_bitdog_ip():
@@ -104,10 +109,12 @@ def get_bitdog_ip():
 # Wait until bitdog ip address is received
 get_bitdog_ip()
 
+
+
 while True:
     try:
         frame = receive_frame()
-        if frame is not None:
+        if frame is not None: # If it receives a frame, the face recognition is executed
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             gray = cv2.equalizeHist(gray)  # Enhance contrast
             faces = face_cascade.detectMultiScale(
@@ -115,12 +122,12 @@ while True:
                 minNeighbors=6,
                 minSize=(40, 40)
             )
-            # faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-
-            dx, dy = 127, 127  # Default if no face
+            
+            dx, dy = 127, 127  # Default if no face is located
             if len(faces) > 0:
                 # Pick the largest face
                 x, y, w, h = max(faces, key=lambda f: f[2]*f[3])
+                # calculates the face center point
                 center_x = x + w // 2
                 center_y = y + h // 2
         
@@ -134,20 +141,23 @@ while True:
                 data = struct.pack('bb', dx, dy)
                 # Setup socket connection UDP to send xy to bitdog
 
+                
                 if bitdog_ip is not None:
                     try:
                         # port of the BitDogLab plate 
                         PORT_XY = 12345
-                        sock_xy.sendto(data, (bitdog_ip, PORT_XY))  
+                        sock_xy.sendto(data, (bitdog_ip, PORT_XY)) # Sends the face center coordinates to BitDogLab's IP  
                     except socket.gaierror:
                         pass
 
+            # Show square indicating recognized face
             cv2.imshow("Face Tracking", frame)
         if cv2.waitKey(1) == 27:  # ESC key
             break
     except KeyboardInterrupt:
         break
 
+# Closes the script
 stop=True # interrupt timer cycle
 timer.cancel() # cancel timer
 sock_recv.close()
