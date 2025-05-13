@@ -67,7 +67,7 @@ const char* password = "SENHA_WIFI";
 ```
 ### Arquivo bitdog/main.py (bitdoglab)
 ```python
-# Setup Wi-Fi
+# Setup Wi-Fi (line 129)
 ssid = 'SUA_REDE_WIFI'
 password = 'SENHA_WIFI'
 ```
