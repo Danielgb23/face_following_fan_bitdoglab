@@ -1,5 +1,5 @@
 """
-This file controls the servo motors based on two inputs dx and dy
+This section controls the servo motors based on two inputs dx and dy
 that represent the distance from the center of the image in the camera
 using the interface function "servo_update" 
 
@@ -55,7 +55,7 @@ def servo_update(dx, dy):
     servo_v.duty_u16(angle_to_duty(angle_y))
 
 """
-This file controls the L293 H bridge that controls the fan's power.
+This section controls the L293 H bridge that controls the fan's power.
 The interface is the function "update_fan"
 
 hbridge L293 IC datasheet:
@@ -83,7 +83,7 @@ def update_fan(percent):
     fan_pwm.duty_u16(duty)
 
 """
-Main file
+Main section
 
 It polls waiting for udp packets at port 12345
 and updates the servos with the new position
