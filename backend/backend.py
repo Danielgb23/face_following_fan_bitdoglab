@@ -3,8 +3,9 @@ import socket
 import struct
 import numpy as np
 import threading
-
+import mediapipe as mp
 import time
+
 # ESP32-CAM UDP config
 
 # Create a socket to connect to the ESP32 camera
@@ -73,16 +74,10 @@ while( resp is None):
 
 
 
-# Load OpenCV face detector
+# Mediapipe face detector
+mp_face = mp.solutions.face_detection
+detector = mp_face.FaceDetection(model_selection=0, min_detection_confidence=0.5)
 
-# Open CV Pretrained model for faces
-# Arch linux #####
-cascade_path = "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml"
-face_cascade = cv2.CascadeClassifier(cascade_path)
-####### as ex
-# Windows #####
-#face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-############
 
 
 # bitdog position data socket
@@ -115,18 +110,23 @@ while True:
     try:
         frame = receive_frame()
         if frame is not None: # If it receives a frame, the face recognition is executed
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray = cv2.equalizeHist(gray)  # Enhance contrast
-            faces = face_cascade.detectMultiScale(
-                gray, scaleFactor=1.05,
-                minNeighbors=6,
-                minSize=(40, 40)
-            )
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            result = detector.process(rgb)
             
-            dx, dy = 127, 127  # Default if no face is located
-            if len(faces) > 0:
-                # Pick the largest face
-                x, y, w, h = max(faces, key=lambda f: f[2]*f[3])
+            if result.detections:
+                hf, wf, _ = frame.shape
+                # Find the detection with the largest bounding box area
+                largest = max(result.detections, key=lambda d: (
+                    d.location_data.relative_bounding_box.width *
+                    d.location_data.relative_bounding_box.height
+                ))
+
+                # Get bounding box and convert to pixel coordinates
+                bbox = largest.location_data.relative_bounding_box
+                x = int(bbox.xmin * wf)
+                y = int(bbox.ymin * hf)
+                w = int(bbox.width * wf)
+                h = int(bbox.height * hf)
                 # calculates the face center point
                 center_x = x + w // 2
                 center_y = y + h // 2
