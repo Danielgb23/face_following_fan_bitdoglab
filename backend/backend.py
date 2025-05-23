@@ -6,8 +6,34 @@ import threading
 import mediapipe as mp
 import time
 
-# ESP32-CAM UDP config
+# Mediapipe face detector
+mp_face = mp.solutions.face_detection
+detector = mp_face.FaceDetection(model_selection=0, min_detection_confidence=0.5)
+def get_bigger_face(frame):
 
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    result = detector.process(rgb)
+
+    hf, wf, _ = frame.shape
+
+    if result.detections:
+        # Find the detection with the largest bounding box area
+        largest = max(result.detections, key=lambda d: (
+            d.location_data.relative_bounding_box.width *
+            d.location_data.relative_bounding_box.height
+        ))
+
+
+        # Get bounding box and convert to pixel coordinates
+        bbox = largest.location_data.relative_bounding_box
+        x = int(bbox.xmin * wf)
+        y = int(bbox.ymin * hf)
+        w = int(bbox.width * wf)
+        h = int(bbox.height * hf)
+        return x, y, w, h
+    return None
+
+# ESP32-CAM UDP config
 # Create a socket to connect to the ESP32 camera
 UDP_IP = "0.0.0.0"
 UDP_PORT = 12346 #Selected port specificaly for reciving data packages
@@ -73,13 +99,6 @@ while( resp is None):
     resp=send_udp_broadcast(b"REGISTER backend")
 
 
-
-# Mediapipe face detector
-mp_face = mp.solutions.face_detection
-detector = mp_face.FaceDetection(model_selection=0, min_detection_confidence=0.5)
-
-
-
 # bitdog position data socket
 # This sends the data containing the face position to BitDogLab's IP adress
 sock_xy = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -105,28 +124,15 @@ def get_bitdog_ip():
 get_bitdog_ip()
 
 
-
 while True:
     try:
         frame = receive_frame()
         if frame is not None: # If it receives a frame, the face recognition is executed
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            result = detector.process(rgb)
-            
-            if result.detections:
-                hf, wf, _ = frame.shape
-                # Find the detection with the largest bounding box area
-                largest = max(result.detections, key=lambda d: (
-                    d.location_data.relative_bounding_box.width *
-                    d.location_data.relative_bounding_box.height
-                ))
+            # gets the bigger face through the face detector
+            face = get_bigger_face(frame) 
 
-                # Get bounding box and convert to pixel coordinates
-                bbox = largest.location_data.relative_bounding_box
-                x = int(bbox.xmin * wf)
-                y = int(bbox.ymin * hf)
-                w = int(bbox.width * wf)
-                h = int(bbox.height * hf)
+            if face is not None:
+                x, y, w, h = face
                 # calculates the face center point
                 center_x = x + w // 2
                 center_y = y + h // 2
