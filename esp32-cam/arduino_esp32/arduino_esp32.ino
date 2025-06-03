@@ -22,7 +22,7 @@ WiFiUDP udp_dns;
 
 String udpAddress;
 String udpAddressAux;
-
+IPAddress apip;
 
 // mock dns server resolve function with timeout
 // This function sends a request to the backend in order to receive the IP address of the notebook
@@ -138,7 +138,7 @@ void setup() {
   
   //first dns request
   udpAddress[0]='\0';
-  while(udpAddress[0]=='\0' || udpAddress=="NOT_FOUND")
+  while(!apip.fromString(udpAddress)) // waits until it has a valid ip address
       udpAddress = resolve_name(backend_name);
     
 }
@@ -149,7 +149,7 @@ void loop() {
     requestFlag = false;
     //request backend address
     udpAddressAux = resolve_name(backend_name);
-    if(udpAddressAux[0]!='\0' && udpAddressAux!="NOT_FOUND")
+    if(apip.fromString(udpAddressAux)) //tests if recovered string is an ip address
       udpAddress=udpAddressAux;
   }
   //Error message if the camera capture fails
