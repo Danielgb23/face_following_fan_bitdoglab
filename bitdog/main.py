@@ -173,7 +173,7 @@ try:
         print(f"dx={dx}, dy={dy}")
 
         # update servos position
-        servo_update(dx,dy)
+        servo_update(dx,-dy)
         
         utime.sleep(0.1)
         
@@ -184,3 +184,4 @@ finally:
      servo_h.deinit()
      servo_v.deinit()
      fan_pwm.deinit()
+
