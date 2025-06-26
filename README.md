@@ -1,10 +1,14 @@
 # Ventilador Seguidor de Rostos - BitDogLab
 
 ##  Descrição
-Sistema inteligente que move um ventilador para seguir rostos detectados por visão computacional, composto por:
+Sistema inteligente de embarcados que move um ventilador para seguir rostos detectados por uma IA de visão computacional. [Link](https://youtu.be/tgpLVKnkNZ8) do vídeo de demonstração. 
+
+![image](https://github.com/user-attachments/assets/e49bbb70-7410-43fe-9ff9-5162cc33b6f5)
+
+Composto por:
 
 - **ESP32-CAM**: Módulo em arduino com camera e wifi que captura imagens e envia para o backend
-- **Backend em Python**: Processa imagens com OpenCV para detecção facial e informa os IPs
+- **Backend em Python**: Processa imagens com OpenCV e mediapipe para detecção facial e informa os IPs com um mock de servidor DNS
 - **Placa BitDogLab**: Placa de raspberry pico com upython que controla servomotores e ventilador
 - **Comunicação WiFi**: Todos os componentes se comunicam sem fio
 
@@ -19,6 +23,8 @@ Sistema inteligente que move um ventilador para seguir rostos detectados por vis
 | Ponte H L293 | 1 | Para Controlar o ventilador |
 | Ventilador DC | 1 | 5V ou 12V conforme modelo |
 | Fonte de alimentação 5V | 1 | Adequada para todos componentes |
+|pan tilt| 1 | Suporte físico para o ventilador controlado pelos servos|
+
 
 ### Conexões Elétricas BitDogLab
 1. GPIO4 PWM ventilador na ponte H
@@ -42,6 +48,15 @@ Configuração dos pinos
 |2| 	Vermelho |	Alimentação 5V (VCC)|
 |3| 	Laranja| 	Sinal de controle (PWM)|
 
+### Pan tilt
+O modelo de pan tilt utilizado foi impresso com uma impressora 3D usando o seguinte [modelo](https://www.thingiverse.com/thing:6008663) com [intruções de montagem](https://www.instructables.com/Pan-and-Tilt-Camera-With-ESP32-CAM-L0Cost-Robot-Co/). Os arquivos da impressora 3D também estão na pasta pantilt3d.
+
+![image](https://github.com/user-attachments/assets/6dc45f54-bd07-45e9-8b9b-6671ea6c9f25)_Figura instructables com câmera ao invés do ventilador._
+
+
+### Placa
+Arquivos da placa PCB no diretorio placa.
+
 ##  Instalação do Software
 
 ### Firmware para ESP32-CAM
@@ -51,7 +66,7 @@ Configuração dos pinos
 
 ### Backend em Python
 ```bash
-pip install opencv-python numpy 
+pip install opencv-python numpy mediapipe 
 ```
 ### Firmware bitdoglab
 Seguir o guia de instalação no [site](https://bitdoglab.webcontent.website/).
@@ -92,7 +107,7 @@ password = 'SENHA_WIFI'
 3. ESP32 conecta automaticamente e inicia streaming
 4. Ligar ou resetar BitDogLab se ligada para registrar no script servidor mock dns 
 
-##  Estrutura do Projeto (há alguns arquivos auxiliares na pasta backend para testar os componentes individualmente)
+##  Estrutura do Projeto (há alguns arquivos auxiliares da placa e pantilt)
 ```
 ├── esp32-cam/
 │   └── arduino_esp32/     #
