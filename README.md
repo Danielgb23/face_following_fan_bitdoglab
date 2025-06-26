@@ -1,9 +1,12 @@
 # Ventilador Seguidor de Rostos - BitDogLab
 
 ##  Descrição
-Sistema inteligente de embarcados que move um ventilador para seguir rostos detectados por uma IA de visão computacional. [Link](https://youtu.be/tgpLVKnkNZ8) do vídeo de demonstração. 
+Sistema inteligente de embarcados que move um ventilador para seguir rostos detectados por uma IA de visão computacional. 
 
-![image](https://github.com/user-attachments/assets/e49bbb70-7410-43fe-9ff9-5162cc33b6f5)
+[Link](https://youtu.be/tgpLVKnkNZ8) do vídeo de demonstração. 
+
+<img src="https://github.com/user-attachments/assets/e49bbb70-7410-43fe-9ff9-5162cc33b6f5" width="300">
+
 
 Composto por:
 
@@ -50,9 +53,6 @@ Configuração dos pinos
 
 ### Pan tilt
 O modelo de pan tilt utilizado foi impresso com uma impressora 3D usando o seguinte [modelo](https://www.thingiverse.com/thing:6008663) com [intruções de montagem](https://www.instructables.com/Pan-and-Tilt-Camera-With-ESP32-CAM-L0Cost-Robot-Co/). Os arquivos da impressora 3D também estão na pasta pantilt3d.
-
-![image](https://github.com/user-attachments/assets/6dc45f54-bd07-45e9-8b9b-6671ea6c9f25)_Figura instructables com câmera ao invés do ventilador._
-
 
 ### Placa
 Arquivos da placa PCB no diretorio placa.
