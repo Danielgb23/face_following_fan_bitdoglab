@@ -173,7 +173,7 @@ try:
         print(f"dx={dx}, dy={dy}")
 
         # update servos position
-        servo_update(dx,-dy)
+        servo_update(dx+15,-dy*0.9-15)
         
         utime.sleep(0.1)
         
