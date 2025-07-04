@@ -78,6 +78,10 @@ Configuração dos pinos
 ### Pan tilt
 O modelo de pan tilt utilizado foi impresso com uma impressora 3D usando o seguinte [modelo](https://www.thingiverse.com/thing:6008663) com [intruções de montagem](https://www.instructables.com/Pan-and-Tilt-Camera-With-ESP32-CAM-L0Cost-Robot-Co/). Os arquivos da impressora 3D também estão na pasta pantilt3d.
 
+<img src="https://github.com/user-attachments/assets/f1cc867b-a460-4ac3-a387-944bd04bc564" width="450">
+
+
+
 ### Placa
 Arquivos da placa PCB no diretorio placa.
 
