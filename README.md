@@ -6,8 +6,7 @@ Sistema inteligente de embarcados que move um ventilador para seguir rostos dete
 [Link](https://youtu.be/tgpLVKnkNZ8) do vídeo de demonstração. 
 
 <img src="https://github.com/user-attachments/assets/e49bbb70-7410-43fe-9ff9-5162cc33b6f5" width="300">
-<img src="https://github.com/user-attachments/assets/1d22d1e8-25a6-4c01-ae31-166bb2425db2" width="300">
-<img src="https://github.com/user-attachments/assets/fe814cd5-c27a-42a2-804d-5066f59f9408" width="300">
+
 
 
 
@@ -56,6 +55,8 @@ ausência de pessoas.
 3. GPIO9 Servo vertical
 
 ### Conexões Elétricas L293 (pinos)
+<img src="https://github.com/user-attachments/assets/1d22d1e8-25a6-4c01-ae31-166bb2425db2" width="450">
+<img src="https://github.com/user-attachments/assets/fe814cd5-c27a-42a2-804d-5066f59f9408" width="450">
 - 4,5,12 or 13: terra
 - 16: VCC1 fonte de alimentação das portas lógicas internas (5V)
 - 8: Vcc2 fonte de alimentação do ventilador
