@@ -6,6 +6,11 @@ Sistema inteligente de embarcados que move um ventilador para seguir rostos dete
 [Link](https://youtu.be/tgpLVKnkNZ8) do vídeo de demonstração. 
 
 <img src="https://github.com/user-attachments/assets/e49bbb70-7410-43fe-9ff9-5162cc33b6f5" width="300">
+![image](https://github.com/user-attachments/assets/1d22d1e8-25a6-4c01-ae31-166bb2425db2)
+![image](https://github.com/user-attachments/assets/fe814cd5-c27a-42a2-804d-5066f59f9408)
+
+
+
 
 ### Proposta de projeto
 Neste projeto nós propomos criar um sistema que controla a direção que uma ventoinha aponta baseado na posição da face do usuário em relação a uma câmera fixa. A câmera escolhida (ESP32) captura a imagem e envia para um notebook próximo. O notebook realiza uma análise da imagem recebida, identificando uma face ( se houver ) e as coordenadas dela em relação ao centro da câmera, depois envia essas coordenadas para o BitDogLab.
