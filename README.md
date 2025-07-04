@@ -6,8 +6,8 @@ Sistema inteligente de embarcados que move um ventilador para seguir rostos dete
 [Link](https://youtu.be/tgpLVKnkNZ8) do vídeo de demonstração. 
 
 <img src="https://github.com/user-attachments/assets/e49bbb70-7410-43fe-9ff9-5162cc33b6f5" width="300">
-![image](https://github.com/user-attachments/assets/1d22d1e8-25a6-4c01-ae31-166bb2425db2)
-![image](https://github.com/user-attachments/assets/fe814cd5-c27a-42a2-804d-5066f59f9408)
+<img src="https://github.com/user-attachments/assets/1d22d1e8-25a6-4c01-ae31-166bb2425db2" width="300">
+<img src="https://github.com/user-attachments/assets/fe814cd5-c27a-42a2-804d-5066f59f9408" width="300">
 
 
 
